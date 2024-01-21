@@ -8,70 +8,55 @@ import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
 import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 
-// Function to setup the retrieval chain including document loader, splitter, and vectorstore
+// Function to set up the retrieval chain
 async function setupRetrievalChain() {
-  // Initialize the ChatOpenAI model
+  // Initialize the LLM model with the API key
   const chatModel = new ChatOpenAI({
     openAIApiKey: process.env.OPENAI_API_KEY,
   });
 
-  // Load HTML content from a specified URL using CheerioWebBaseLoader
-  // Cheerio parses the HTML and provides access to the content for further processing
-  const loader = new CheerioWebBaseLoader(
-    'https://docs.smith.langchain.com/overview'
-  );
+  // Load and parse HTML content from a URL
+  const loader = new CheerioWebBaseLoader('https://docs.smith.langchain.com/overview');
   const docs = await loader.load();
-  console.log(`Loaded ${docs.length} documents`);
 
-  // Split documents into smaller parts to manage size and data
+  // Split the loaded HTML content into smaller, manageable documents
   const splitter = new RecursiveCharacterTextSplitter();
   const splitDocs = await splitter.splitDocuments(docs);
-  console.log(`Split into ${splitDocs.length} smaller documents`);
 
-  // Embed and index the documents in a vectorstore for efficient retrieval
+  // Index the split documents in a vectorstore for efficient retrieval
   const embeddings = new OpenAIEmbeddings();
-  const vectorstore = await MemoryVectorStore.fromDocuments(
-    splitDocs,
-    embeddings
-  );
-  console.log('Documents indexed in vectorstore');
+  const vectorstore = await MemoryVectorStore.fromDocuments(splitDocs, embeddings);
 
-  // Create a retrieval chain to process incoming questions and fetch relevant documents
-  // The prompt template is used to format the input question and the retrieved context for the LLM
+  // Set up a prompt template that formats the input question and retrieved context for the LLM
   const prompt = ChatPromptTemplate.fromTemplate(`
     Answer the following question based only on the provided context:
     <context>{context}</context>
     Question: {input}`);
 
-  // CreateStuffDocumentsChain creates a chain that takes a prompt and an LLM, and generates an answer based on the provided context
-  const documentChain = await createStuffDocumentsChain({
-    llm: chatModel,
-    prompt,
-  });
+  // Create a document chain that combines the LLM with the prompt to generate answers
+  const documentChain = await createStuffDocumentsChain({ llm: chatModel, prompt });
 
-  // The vectorstore's retriever fetches the most relevant documents based on the input question
+  // Set up a retriever that fetches the most relevant documents based on the input query
   const retriever = vectorstore.asRetriever();
 
-  // CreateRetrievalChain combines the document retrieval with the LLM processing
-  // This chain first uses the retriever to find relevant documents, and then passes these documents, along with the original question, to the LLM for generating an answer
-  const retrievalChain = await createRetrievalChain({
-    combineDocsChain: documentChain,
-    retriever,
-  });
+  // Combine the document retrieval process with the LLM processing
+  // This chain first uses the retriever to find and provide relevant context (documents) to the LLM
+  // The LLM then generates an answer based on both the question and the provided context
+  const retrievalChain = await createRetrievalChain({ combineDocsChain: documentChain, retriever });
 
   return { retrievalChain, chatModel };
 }
 
-// Function to ask a question and get an answer using the retrieval chain
+// Function to ask a question using the retrieval chain
 async function askWithRetrieval(question: string) {
   const { retrievalChain } = await setupRetrievalChain();
   const result = await retrievalChain.invoke({ input: question });
+
+  // Log and return the answer received from the LLM after considering the provided context
   console.log(`Retrieved answer: ${result.answer}`);
   return result.answer;
 }
 
-// Example usage to demonstrate how the retrieval chain works
+// Example usage to demonstrate the retrieval chain's capability to provide contextually relevant answers
 const question = 'What is LangSmith?';
-askWithRetrieval(question).then((answer) =>
-  console.log('Final Answer:', answer)
-);
+askWithRetrieval(question).then((answer) => console.log('Final Answer:', answer));
