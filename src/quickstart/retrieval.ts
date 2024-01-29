@@ -38,14 +38,14 @@ async function setupRetrievalChain() {
     <context>{context}</context>
     Question: {input}`);
 
-  // Create a document chain that combines the LLM with the prompt to generate context-aware responses.
+  // Create a document chain that combines the LLM with the prompt to generate context-aware responses from the passed documents.
   const documentChain = await createStuffDocumentsChain({
     llm: chatModel,
     prompt,
   });
 
   // Set up a retriever to fetch the most relevant documents based on the input question.
-  // The retrieved documents along with the user's question are then passed to the LLM for response generation.
+  // The retrieved documents along with the user's question are then passed to the documentChain for response generation.
   const retriever = vectorstore.asRetriever();
 
   // Form a complete retrieval chain combining document retrieval with LLM processing.
