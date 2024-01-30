@@ -1,33 +1,42 @@
 # Guide to Working with Language Models
 
 ## Introduction
+
 This guide provides an overview of working with language models, focusing on Large Language Models (LLMs) and ChatModels. It will explain how to use PromptTemplates for formatting inputs and Output Parsers for handling outputs.
 
 ## Models
-There are two main types of models discussed in this guide:   
+
+There are two main types of models discussed in this guide:
+
 - **LLMs (Large Language Models)**: These are pure text completion models, like OpenAI's GPT-3, that take a string prompt and return a string completion.
 - **Chat Models**: Tuned specifically for conversations, these models, including GPT-4 and Anthropic's Claude-2, use chat messages as input/output instead of simple string completions.
 
 ### OpenAI
+
 To use the OpenAI model, you first need to install the LangChain OpenAI integration package.
 
 #### Installation
+
 Choose your package manager and run the corresponding command:
+
 - **npm**: `npm install @langchain/openai`
 - **Yarn**: `yarn add @langchain/openai`
 - **pnpm**: `pnpm add @langchain/openai`
 
 #### Setting Up
+
 - Obtain an API key by creating an account [here](https://openai.com/account/api-keys).
 - Set the API key as an environment variable: `export OPENAI_API_KEY="Your_API_Key"`
 - Initialize the models:
-  ```javascript
-  import { OpenAI, ChatOpenAI } from "@langchain/openai";
 
-  const llm = new OpenAI({ modelName: "gpt-3.5-turbo-instruct" });
-  const chatModel = new ChatOpenAI({ modelName: "gpt-3.5-turbo" });
+  ```javascript
+  import { OpenAI, ChatOpenAI } from '@langchain/openai';
+
+  const llm = new OpenAI({ modelName: 'gpt-3.5-turbo-instruct' });
+  const chatModel = new ChatOpenAI({ modelName: 'gpt-3.5-turbo' });
   ```
-For more details, see the markdown on [models](../linked/models.md).
+
+  For more details, see the markdown on [models](../linked/models.md).
 
 ### Local
 
@@ -42,10 +51,12 @@ PromptTemplates format user input into a structured prompt for the model. The ad
 Here's a basic example of creating a prompt template:
 
 ```javascript
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate } from '@langchain/core/prompts';
 
-const prompt = PromptTemplate.fromTemplate("What is a good name for a company that makes {product}?");
-await prompt.format({ product: "colorful socks" });
+const prompt = PromptTemplate.fromTemplate(
+  'What is a good name for a company that makes {product}?'
+);
+await prompt.format({ product: 'colorful socks' });
 // What is a good name for a company that makes colorful socks?
 ```
 
@@ -54,20 +65,21 @@ await prompt.format({ product: "colorful socks" });
 For a list of messages, use ChatPromptTemplates:
 
 ```javascript
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 
-const template = "You are a helpful assistant that translates {input_language} to {output_language}.";
-const humanTemplate = "{text}";
+const template =
+  'You are a helpful assistant that translates {input_language} to {output_language}.';
+const humanTemplate = '{text}';
 
 const chatPrompt = ChatPromptTemplate.fromMessages([
-  ["system", template],
-  ["human", humanTemplate],
+  ['system', template],
+  ['human', humanTemplate],
 ]);
 
 await chatPrompt.formatMessages({
-  input_language: "English",
-  output_language: "French",
-  text: "I love programming.",
+  input_language: 'English',
+  output_language: 'French',
+  text: 'I love programming.',
 });
 ```
 
@@ -88,10 +100,10 @@ For more details, see the markdown on [output parsers](../linked/output-parsers.
 Example:
 
 ```javascript
-import { CommaSeparatedListOutputParser } from "langchain/output_parsers";
+import { CommaSeparatedListOutputParser } from 'langchain/output_parsers';
 
 const parser = new CommaSeparatedListOutputParser();
-await parser.invoke("hi, bye");
+await parser.invoke('hi, bye');
 // ['hi', 'bye']
 ```
 
@@ -103,5 +115,5 @@ Note that we are using the `.pipe()` method to join these components together. T
 
 ```javascript
 const chain = chatPrompt.pipe(chatModel).pipe(parser);
-await chain.invoke({ text: "colors" });
+await chain.invoke({ text: 'colors' });
 ```
