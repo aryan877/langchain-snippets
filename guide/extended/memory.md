@@ -302,3 +302,84 @@ const res2 = await chain.call({ input: "What's my name?" });
 console.log({ res2, memory: await memory.loadMemoryVariables({}) });
 // Outputs updated summary and response
 ```
+---
+
+## Persisting Memory with MongoDB
+### MongoDB Chat Memory in LangChain
+
+**Description:** 
+- For long-term persistence of chat sessions, MongoDB can be used instead of the default in-memory chatHistory.
+- This approach is ideal for applications requiring the storage and retrieval of conversation history over extended periods or across multiple sessions.
+
+**Setup:**  
+1. **Installation of Node MongoDB SDK:** 
+- Required for integrating MongoDB with your project.
+
+```bash
+npm install -S mongodb
+``` 
+2. **Additional Package Installation:** 
+- Install necessary packages for LangChain integration.
+
+```bash
+npm install @langchain/openai @langchain/community
+``` 
+3. **MongoDB Instance:** 
+- A MongoDB instance is required for the database connection.
+
+**Usage:** 
+- Each chat session in MongoDB must have a unique session ID.
+
+**Code Example:** 
+- Import necessary modules and set up MongoDB connection and collections.
+- Create a new session ID for each chat history session.
+- Initialize LangChain components with MongoDB-backed chat history.
+
+```javascript
+import { MongoClient, ObjectId } from "mongodb";
+import { BufferMemory } from "langchain/memory";
+import { ChatOpenAI } from "@langchain/openai";
+import { ConversationChain } from "langchain/chains";
+import { MongoDBChatMessageHistory } from "@langchain/community/stores/message/mongodb";
+
+const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
+await client.connect();
+const collection = client.db("langchain").collection("memory");
+
+// Create a new session ID
+const sessionId = new ObjectId().toString();
+
+const memory = new BufferMemory({
+  chatHistory: new MongoDBChatMessageHistory({
+    collection,
+    sessionId,
+  }),
+});
+
+const model = new ChatOpenAI({
+  modelName: "gpt-3.5-turbo",
+  temperature: 0,
+});
+
+const chain = new ConversationChain({ llm: model, memory });
+
+// Example conversation
+const res1 = await chain.call({ input: "Hi! I'm Jim." });
+console.log({ res1 });
+
+const res2 = await chain.call({ input: "What did I just say my name was?" });
+console.log({ res2 });
+
+// Viewing chat history in MongoDB
+console.log(await memory.chatHistory.getMessages());
+
+// Clearing chat history
+await memory.chatHistory.clear();
+```
+
+
+
+**Key Features:**  
+- **Persistent Memory:**  Enables saving chat histories over long periods, even after the application restarts. 
+- **Unique Session Management:**  Utilizes session IDs for differentiating between individual chat sessions. 
+- **Integration with LangChain:**  Seamlessly integrates with LangChain components for conversational AI applications.
